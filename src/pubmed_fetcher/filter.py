@@ -1,6 +1,19 @@
-def is_non_academic(affiliation: str) -> bool:
-    academic_keywords = ["university", "college", "institute", "school", "hospital", "department"]
-    return not any(keyword in affiliation.lower() for keyword in academic_keywords)
+def is_pharma_or_biotech_affiliation(affiliation: str) -> bool:
+    affiliation = affiliation.lower()
+
+    academic_keywords = [
+        "university", "college", "institute", "school", "hospital", "department", "faculty",
+        "nih", "cdc", "government", "ministry"
+    ]
+    industry_keywords = [
+        "inc", "ltd", "llc", "pharma", "biotech", "therapeutics", "genomics", "biosciences", "technologies", 
+        "gmbh", "corp", "corporation", "solutions", "labs"
+    ]
+
+    return (
+        any(keyword in affiliation for keyword in industry_keywords) and
+        not any(keyword in affiliation for keyword in academic_keywords)
+    )
 
 def extract_relevant_data(records, debug=False) -> list[dict]:
     output = []
@@ -13,7 +26,7 @@ def extract_relevant_data(records, debug=False) -> list[dict]:
             pub_date = article_data.get("Journal", {}).get("JournalIssue", {}).get("PubDate", {})
             pub_year = pub_date.get("Year", "Unknown")
 
-            non_academic_authors = []
+            industry_authors = []
             company_affiliations = []
             email = ""
 
@@ -21,18 +34,19 @@ def extract_relevant_data(records, debug=False) -> list[dict]:
                 affils = author.get("AffiliationInfo", [])
                 for aff in affils:
                     affil_text = aff.get("Affiliation", "")
-                    if "@" in affil_text:
+                    if "@" in affil_text and not email:
                         email = affil_text
-                    if is_non_academic(affil_text):
-                        non_academic_authors.append(author.get("LastName", "") + " " + author.get("ForeName", ""))
+                    if is_pharma_or_biotech_affiliation(affil_text):
+                        full_name = f"{author.get('LastName', '')} {author.get('ForeName', '')}".strip()
+                        industry_authors.append(full_name)
                         company_affiliations.append(affil_text)
 
-            if non_academic_authors:
+            if industry_authors:
                 output.append({
                     "PubmedID": str(pmid),
                     "Title": title,
                     "Publication Date": pub_year,
-                    "Non-academic Author(s)": "; ".join(non_academic_authors),
+                    "Non-academic Author(s)": "; ".join(industry_authors),
                     "Company Affiliation(s)": "; ".join(company_affiliations),
                     "Corresponding Author Email": email,
                 })
@@ -42,4 +56,4 @@ def extract_relevant_data(records, debug=False) -> list[dict]:
                 print("Error parsing article:", e)
 
     return output
- 
+
