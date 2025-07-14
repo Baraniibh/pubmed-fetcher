@@ -1,0 +1,23 @@
+ # Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Poetry and build files
+poetry.lock
+*.egg-info/
+dist/
+build/
+
+# Environments
+.env
+.venv/
+venv/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# IDE files (optional)
+.vscode/
+.idea/
+
